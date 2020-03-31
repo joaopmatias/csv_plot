@@ -110,17 +110,41 @@ select_ts <- function(input, output, session, datafile) {
     return(ts_data)
 }
 
+show_plotUI <- function(id) {
+    ns <- NS(id)
+
+    verticalLayout(plotly::plotlyOutput(ns("plot_graph")),
+                   wellPanel(
+                       uiOutput(ns("plot_interval")),
+                       actionButton(ns("update_plot"), "Update graph")
+                   )
+    )
+}
+
+show_plot <- function(input, output, session, ts_data) {
+    ns <- session$ns
+
+    output$plot_interval <- renderUI({
+        sliderInput(ns("plot_range"), "Select rows:",
+                    min = 1, max = dim(ts_data())[1], value = c(1, dim(ts_data())[1])
+        )
+    })
+
+    observeEvent(input$update_plot, {
+        output$plot_graph <- plotly::renderPlotly({
+            isolate(plotly::plot_ly(ts_data()[input$plot_range[1] : input$plot_range[2],],
+                                    x = ~t, y = ~y, type = "scatter", mode = "line"
+            ))
+        })
+    })
+
+}
+
 ui <- fluidPage(
     tabsetPanel(
         tabPanel("File selection", import_fileUI("import_file")),
         tabPanel("Specify timeseries", select_tsUI("select_ts")),
-        tabPanel("Plot",
-                 verticalLayout(plotly::plotlyOutput("plot_graph"),
-                                wellPanel(
-                                    uiOutput("plot_interval")
-                                )
-                 )
-        )
+        tabPanel("Plot", show_plotUI("show_plot"))
     )
 )
 
@@ -129,17 +153,7 @@ server <- function(input, output) {
 
     ts_data <- callModule(select_ts, "select_ts", datafile)
 
-    output$plot_graph <- plotly::renderPlotly({
-        plotly::plot_ly(ts_data()[input$plot_range[1] : input$plot_range[2],],
-                        x = ~t, y = ~y, type = "scatter", mode = "line"
-        )
-    })
-
-    output$plot_interval <- renderUI({
-        sliderInput("plot_range", "Select rows:",
-                    min = 1, max = dim(ts_data())[1], value = c(1, dim(ts_data())[1])
-        )
-    })
+    callModule(show_plot, "show_plot", ts_data)
 }
 
 
