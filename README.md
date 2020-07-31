@@ -1,3 +1,17 @@
+​
+## Dependencies
+​
+```
+$ brew install pkg-config (so that the package data.table does not fail installation)
+```
+​
+Let's assume we have R installed and working. In the R console:
+```
+install.packages("DT")
+install.packages("data.table")
+install.packages("plotly")
+install.packages("shiny")
+```
 
 ## Run
 
